@@ -1,0 +1,16 @@
+# viewer/config.yaml
+window:
+  width: 1800
+  height: 900
+  title: "3D Mesh Explorer"
+
+buttons:
+  count: 8
+  names: ["Heart", "Lungs", "Liver", "Kidneys", "Brain", "Stomach", "Pancreas", "Intestines"]
+  width_percentage: 15
+  height_division: 8
+
+slider:
+  min: 0
+  max: 100
+  initial_value: 50
