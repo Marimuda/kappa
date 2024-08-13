@@ -19,7 +19,7 @@ class VertebraDatasetFactory:
     """
 
     def __init__(self, base_path: str, crop_dir: str = 'crop', dist_field_dir: str = 'dist_field', surfaces_dir: str = 'surfaces',
-                 subdirectory: str = '') -> None:
+                 subdirectory: str = '', return_sample_id=False) -> None:
         """
         Initializes the dataset factory with base path and optional subdirectories.
 
@@ -35,6 +35,7 @@ class VertebraDatasetFactory:
         self.dist_field_dir = dist_field_dir
         self.surfaces_dir = surfaces_dir
         self.subdirectory = subdirectory
+        self.return_sample_id = return_sample_id
         self.datasets: Dict[str, Dataset] = {}  # Initialize an empty cache for datasets
 
     def _initialize_dataset(self, dataset_type: str) -> Tuple[str, str, Callable[[str], Union[torch.Tensor, Data]]]:
@@ -175,7 +176,7 @@ class VertebraDatasetFactory:
         data_dir, file_extension, loader = self._initialize_dataset(dataset_type)
 
         file_paths = self._collect_file_paths(data_dir, file_extension)#[:100]
-        return VertebraDataset(file_paths, loader)
+        return VertebraDataset(file_paths, loader, return_sample_id=self.return_sample_id)
 
     def _extract_faces(self, polydata) -> torch.Tensor:
         """

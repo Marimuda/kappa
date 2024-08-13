@@ -6,7 +6,7 @@ from typing import List, Callable, Union
 class VertebraDataset(Dataset):
     """General dataset class for loading vertebra data, including crops, distance fields, and meshes."""
 
-    def __init__(self, file_paths: List[str], loader: Callable[[str], Union[torch.Tensor, Data]]) -> None:
+    def __init__(self, file_paths: List[str], loader: Callable[[str], Union[torch.Tensor, Data]], return_sample_id=False) -> None:
         """Initializes the dataset with file paths and a loader function.
 
         Args:
@@ -15,6 +15,7 @@ class VertebraDataset(Dataset):
         """
         self.file_paths = file_paths
         self.loader = loader
+        self.return_sample_id = return_sample_id
 
     def __len__(self) -> int:
         """Returns the number of samples in the dataset.
@@ -36,4 +37,12 @@ class VertebraDataset(Dataset):
         file_path = self.file_paths[idx]
         label = file_path.__contains__('outlier')
         sample = self.loader(file_path)
-        return sample, float(label)
+        
+        if self.return_sample_id :
+            
+            sample_id = file_path.split('/')[-1]
+            sample_id = sample_id.split('_')
+            sample_id = f'{sample_id[0]}_{sample_id[1]}'
+            return sample, float(label), sample_id
+        else :
+            return sample, float(label)
