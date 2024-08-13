@@ -1,0 +1,7 @@
+vtk==9.3.0
+SimpleITK
+scikit-learn
+requests
+torch_geometric
+itk
+wandb

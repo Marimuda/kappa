@@ -112,3 +112,8 @@ dmypy.json
 *.log
 *.bak
 *.swp
+
+resnet.pth
+*.err
+*.out
+wandb

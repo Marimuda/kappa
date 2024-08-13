@@ -34,4 +34,6 @@ class VertebraDataset(Dataset):
             Union[torch.Tensor, Data]: The loaded data, which could be an image, distance field, or mesh.
         """
         file_path = self.file_paths[idx]
-        return self.loader(file_path)
+        label = file_path.__contains__('outlier')
+        sample = self.loader(file_path)
+        return sample, float(label)

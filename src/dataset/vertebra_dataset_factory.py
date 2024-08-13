@@ -102,6 +102,7 @@ class VertebraDatasetFactory:
         try:
             image = itk.imread(file_path)
             array = itk.array_from_image(image)
+            array = array.astype('float')
             logger.debug(f"NIfTI file {file_path} loaded with shape {array.shape}.")
             return torch.tensor(array, dtype=torch.float32)
         except ImportError as e:
@@ -173,7 +174,7 @@ class VertebraDatasetFactory:
         """
         data_dir, file_extension, loader = self._initialize_dataset(dataset_type)
 
-        file_paths = self._collect_file_paths(data_dir, file_extension)
+        file_paths = self._collect_file_paths(data_dir, file_extension)#[:100]
         return VertebraDataset(file_paths, loader)
 
     def _extract_faces(self, polydata) -> torch.Tensor:
