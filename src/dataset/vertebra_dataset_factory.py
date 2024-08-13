@@ -38,7 +38,7 @@ class VertebraDatasetFactory:
         self.return_sample_id = return_sample_id
         self.datasets: Dict[str, Dataset] = {}  # Initialize an empty cache for datasets
 
-    def _initialize_dataset(self, dataset_type: str) -> Tuple[str, str, Callable[[str], Union[torch.Tensor, Data]]]:
+    def _initialize_dataset(self, dataset_type: str):
         """
         Initializes dataset paths and sets the loader function based on the dataset type.
 
