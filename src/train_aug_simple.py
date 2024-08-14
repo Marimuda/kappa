@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 # custom imports
-from dataset.vertebra_dataset_factory import VertebraDatasetFactory
+from dataset.positive_factory import VertebraDatasetFactoryPositive
 from models.resnet import generate_model as build_resnet
 
 
@@ -33,18 +33,13 @@ parser.add_argument('--no-debug', action='store_false', dest='debug')
 parser.set_defaults(debug=True)
 
 
-parser.add_argument('--class-weights', action='store_true', dest='class_weights')
-parser.add_argument('--no-class-weights', action='store_false', dest='class_weights')
-parser.set_defaults(class_weights=False)
-
 args = parser.parse_args()
 
 """Dataset"""
 base_path = "/dtu/blackhole/14/189044/atde/challenge_data/train"
 save_path = "/dtu/blackhole/14/189044/atde/challenge_model/"
-RUN_NAME = f'resnet_{args.model_depth}_lr_{args.lr}_b_{args.batch_size}'
-if args.class_weights: 
-    RUN_NAME += '_class_weights'
+RUN_NAME = f'resnet_aug_simple_{args.model_depth}_lr_{args.lr}_b_{args.batch_size}'
+
 assert args.model_depth in [10, 18, 34, 50, 101, 152, 200]
 if not args.debug:
     os.makedirs(save_path, exist_ok=True)
@@ -55,20 +50,16 @@ if not args.debug:
     )
 model_path = os.path.join(save_path, f'{RUN_NAME}.pth')
 
-crop_factory = VertebraDatasetFactory(base_path=base_path)
+crop_factory = VertebraDatasetFactoryPositive(base_path=base_path)
 crop_dataset = crop_factory.create_dataset(dataset_type='crop')
-crop_loader = DataLoader(crop_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=4)
+crop_loader = DataLoader(crop_dataset, batch_size=args.batch_size, shuffle=True)
 
 """Model"""
 resnet = build_resnet(model_depth=args.model_depth, n_input_channels=1, n_classes=1)
 resnet.to(device)
 total_params = sum(p.numel() for p in resnet.parameters() if p.requires_grad)
 
-if args.class_weights:
-    #class_weights = torch.tensor([, 0.25], device=device)
-    loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([0.33], device=device))
-else :
-    loss_fn = nn.BCEWithLogitsLoss()
+loss_fn = nn.BCEWithLogitsLoss()
 sigmoid = nn.Sigmoid()
 opt = torch.optim.AdamW(resnet.parameters(), lr=args.lr)
 print(f'[INFO] total_params = {total_params/1e6:.2f}M')

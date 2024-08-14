@@ -15,4 +15,4 @@ module load python3/3.10.12
 module load cuda/11.8
 source /dtu/blackhole/14/189044/atde/bone_voyage_env/bin/activate
 
-python src/train.py --batch-size 8 --lr 0.0001 --no-debug
+python src/train_label.py --batch-size 8 --model-depth 18 --no-debug

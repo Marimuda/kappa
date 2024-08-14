@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 # custom imports
-from dataset.vertebra_dataset_factory import VertebraDatasetFactory
+from dataset.vertebra_db_factory_label import VertebraDBFactoryLabel
 from models.resnet import generate_model as build_resnet
 
 
@@ -42,7 +42,7 @@ args = parser.parse_args()
 """Dataset"""
 base_path = "/dtu/blackhole/14/189044/atde/challenge_data/train"
 save_path = "/dtu/blackhole/14/189044/atde/challenge_model/"
-RUN_NAME = f'resnet_{args.model_depth}_lr_{args.lr}_b_{args.batch_size}'
+RUN_NAME = f'resnet_segmentation_{args.model_depth}_lr_{args.lr}_b_{args.batch_size}'
 if args.class_weights: 
     RUN_NAME += '_class_weights'
 assert args.model_depth in [10, 18, 34, 50, 101, 152, 200]
@@ -55,12 +55,12 @@ if not args.debug:
     )
 model_path = os.path.join(save_path, f'{RUN_NAME}.pth')
 
-crop_factory = VertebraDatasetFactory(base_path=base_path)
+crop_factory = VertebraDBFactoryLabel(base_path=base_path)
 crop_dataset = crop_factory.create_dataset(dataset_type='crop')
-crop_loader = DataLoader(crop_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=4)
+crop_loader = DataLoader(crop_dataset, batch_size=args.batch_size, shuffle=True)
 
 """Model"""
-resnet = build_resnet(model_depth=args.model_depth, n_input_channels=1, n_classes=1)
+resnet = build_resnet(model_depth=args.model_depth, n_input_channels=2, n_classes=1)
 resnet.to(device)
 total_params = sum(p.numel() for p in resnet.parameters() if p.requires_grad)
 
@@ -72,20 +72,25 @@ else :
 sigmoid = nn.Sigmoid()
 opt = torch.optim.AdamW(resnet.parameters(), lr=args.lr)
 print(f'[INFO] total_params = {total_params/1e6:.2f}M')
-
+print(f'[INFO] model_path = {model_path}')
 for e in range(50):
     resnet.train()
     train_loss = 0
     train_acc = 0
     
-    for img_volume, label in tqdm(crop_loader, desc=f'[EPOCH {e+1}/50]'):
+    for img_volume, segmentation, label in tqdm(crop_loader, desc=f'[EPOCH {e+1}/50]'):
         # img_volume: torch.Size([b, 241, 241, 241])
         img_volume = img_volume.unsqueeze(1) # MAKE CHANNLES 1
         img_volume = img_volume.to(device)
+
+        segmentation = segmentation.unsqueeze(1) # MAKE CHANNLES 1
+        segmentation = segmentation.to(device)
+        
+        input = torch.cat([img_volume, segmentation], dim=1)
         label = label.to(device).unsqueeze(1)
 
         opt.zero_grad()
-        pred_logits = resnet(img_volume)
+        pred_logits = resnet(input)
         batch_loss = loss_fn(pred_logits, label)
         batch_loss.backward()
         opt.step()
