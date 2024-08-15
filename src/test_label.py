@@ -30,12 +30,19 @@ parser.add_argument('--model-depth', type=int, default=18)
 
 parser.add_argument('--epochs', type=int, default=50)
 
+parser.add_argument('--class-weights', action='store_true', dest='class_weights')
+parser.add_argument('--no-class-weights', action='store_false', dest='class_weights')
+parser.set_defaults(class_weights=False)
+
 args = parser.parse_args()
 
 """Dataset"""
 base_path = "/dtu/blackhole/14/189044/atde/challenge_data/test"
 save_path = "/dtu/blackhole/14/189044/atde/challenge_model/"
 RUN_NAME = f'resnet_segmentation_{args.model_depth}_lr_{args.lr}_b_{args.batch_size}'
+
+if args.class_weights: 
+    RUN_NAME += '_class_weights'
 
 model_path = os.path.join(save_path, f'{RUN_NAME}.pth')
 
@@ -77,7 +84,10 @@ for img_volume, segmentation, _, sample_ids in tqdm(crop_loader, desc=f'Inferece
         #breakpoint()
         
     
+res_name = 'bone_voyage_v4'
+if args.class_weights: 
+    res_name += '_class_weights'
 
-with open("bone_voyage_v2.json", "w") as f:
+with open(f"{res_name}.json", "w") as f:
     json.dump(results, f)
 

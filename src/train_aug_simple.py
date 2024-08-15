@@ -55,28 +55,34 @@ crop_dataset = crop_factory.create_dataset(dataset_type='crop')
 crop_loader = DataLoader(crop_dataset, batch_size=args.batch_size, shuffle=True)
 
 """Model"""
-resnet = build_resnet(model_depth=args.model_depth, n_input_channels=1, n_classes=1)
+resnet = build_resnet(model_depth=args.model_depth, n_input_channels=2, n_classes=1)
 resnet.to(device)
 total_params = sum(p.numel() for p in resnet.parameters() if p.requires_grad)
 
 loss_fn = nn.BCEWithLogitsLoss()
 sigmoid = nn.Sigmoid()
 opt = torch.optim.AdamW(resnet.parameters(), lr=args.lr)
-print(f'[INFO] total_params = {total_params/1e6:.2f}M')
 
+print(f'[INFO] total_params = {total_params/1e6:.2f}M')
+print(f'[INFO] model_path = {model_path}')
 for e in range(50):
     resnet.train()
     train_loss = 0
     train_acc = 0
     
-    for img_volume, label in tqdm(crop_loader, desc=f'[EPOCH {e+1}/50]'):
+    for img_volume, segmentation, label in tqdm(crop_loader, desc=f'[EPOCH {e+1}/50]'):
         # img_volume: torch.Size([b, 241, 241, 241])
         img_volume = img_volume.unsqueeze(1) # MAKE CHANNLES 1
         img_volume = img_volume.to(device)
+
+        segmentation = segmentation.unsqueeze(1) # MAKE CHANNLES 1
+        segmentation = segmentation.to(device)
+        
+        input = torch.cat([img_volume, segmentation], dim=1)
         label = label.to(device).unsqueeze(1)
 
         opt.zero_grad()
-        pred_logits = resnet(img_volume)
+        pred_logits = resnet(input)
         batch_loss = loss_fn(pred_logits, label)
         batch_loss.backward()
         opt.step()

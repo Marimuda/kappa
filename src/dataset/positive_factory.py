@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from torch_geometric.data import Data
 from typing import List, Tuple, Union, Callable, Dict
 import logging
-from dataset.vertebra_dataset import VertebraDataset
+from dataset.vertebra_dataset_simple_aug import VertebraDatasetSimpleAug
 import vtk 
 import itk
 
@@ -77,8 +77,14 @@ class VertebraDatasetFactoryPositive:
         if not os.path.exists(directory):
             logger.error(f"Directory does not exist: {directory}")
             raise FileNotFoundError(f"Directory does not exist: {directory}")
+
         # NOTE: positive only
-        files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(extension) and 'outlier' not in f]
+        all_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(extension) and 'outlier' not in f]
+        files = []
+        for f in all_files:
+            if not f.__contains__('label'):
+                files.append(f)
+
         logger.debug(f"Collected {len(files)} files with extension {extension} from {directory}.")
 
         if not files:
@@ -177,7 +183,7 @@ class VertebraDatasetFactoryPositive:
         data_dir, file_extension, loader = self._initialize_dataset(dataset_type)
 
         file_paths = self._collect_file_paths(data_dir, file_extension)#[:100]
-        return VertebraDataset(file_paths, loader, return_sample_id=self.return_sample_id)
+        return VertebraDatasetSimpleAug(file_paths, loader, return_sample_id=self.return_sample_id)
 
     def _extract_faces(self, polydata) -> torch.Tensor:
         """
